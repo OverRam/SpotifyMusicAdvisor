@@ -17,7 +17,7 @@ public class Main {
         }
 
         String inputOption = "";
-        while (!inputOption.equalsIgnoreCase("exit")) {
+        while (!inputOption.equalsIgnoreCase("exit"))  {
             inputOption = sc.nextLine();
             controllerApplication.mainMenu(inputOption);
         }
