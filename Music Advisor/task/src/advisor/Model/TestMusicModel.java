@@ -3,7 +3,7 @@ package advisor.Model;
 import java.util.LinkedList;
 import java.util.List;
 
-public class MusicDataModel {
+public class TestMusicModel {
     public List<String> getNewMusic() {
         return newMusicTest();
     }

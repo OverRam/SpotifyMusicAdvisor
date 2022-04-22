@@ -1,21 +1,27 @@
 package advisor;
 
-import advisor.Controller.Controller;
-import advisor.Model.MusicDataModel;
-import advisor.View.MusicView;
+import advisor.Controller.ApplicationController;
+import advisor.Model.SpotifyApiConnectionModel;
+import advisor.View.UserView;
 
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-        Controller controller = new Controller(new MusicView(), new MusicDataModel());
+        ApplicationController controllerApplication = new ApplicationController(new UserView()
+                , SpotifyApiConnectionModel.getInstance());
+
+        if (args.length == 2 && args[0].equalsIgnoreCase("-access")) {
+            controllerApplication.setResourceUrl(args[1]);
+        }
 
         String inputOption = "";
         while (!inputOption.equalsIgnoreCase("exit")) {
             inputOption = sc.nextLine();
-            controller.mainMenu(inputOption);
+            controllerApplication.mainMenu(inputOption);
         }
+
     }
 
 }
