@@ -144,7 +144,7 @@ public class SpotifyApiResourceModel {
         return returnedList;
     }
 
-    public List<String> getPlaylistCategoryID(String spotifyID) {
+    public List<String> getPlaylistByCategoryID(String spotifyID) {
         returnedList = new LinkedList<>();
 
         if (spotifyID == null) {
