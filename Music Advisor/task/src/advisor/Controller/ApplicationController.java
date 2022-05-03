@@ -1,96 +1,106 @@
 package advisor.Controller;
 
-import advisor.Model.SpotifyApiConnectionModel;
-import advisor.Model.TestMusicModel;
+import advisor.Model.DataBase;
+import advisor.Model.SpotifyApiResourceModel;
+import advisor.Model.SpotifyAuth;
 import advisor.View.UserView;
+
+import java.util.HashMap;
 
 public class ApplicationController {
     private final UserView userView;
-    private final SpotifyApiConnectionModel spotifyApiConnectionModel;
+    private final SpotifyAuth spotifyAuth;
+    private boolean firstRun = true;
 
-    public ApplicationController(UserView userView, SpotifyApiConnectionModel spotifyApiConnectionModel) {
+    public ApplicationController(UserView userView, SpotifyAuth spotifyAuth) {
         this.userView = userView;
-        this.spotifyApiConnectionModel = spotifyApiConnectionModel;
+        this.spotifyAuth = spotifyAuth;
     }
 
-    public void setResourceUrl(String url) {
-        spotifyApiConnectionModel.setServerResourceUrl(url);
+    public void setInitParams(HashMap<String, String> params) {
+        if (params.containsKey("-access")) {
+            spotifyAuth.setUrlAccessServer(params.get("-access"));
+        }
+
+        if (params.containsKey("-resource")) {
+            SpotifyApiResourceModel.getInstance().setUrlHostApiResource(params.get("-resource"));
+        }
     }
 
     public void mainMenu(String inputOption) {
+        SpotifyApiResourceModel apiResourceModel = SpotifyApiResourceModel.getInstance();
+        String[] userCategoryChoice = inputOption.split(" ");
+        String categoryName = "";
 
-        String[] userChoice = inputOption.toLowerCase().split(" ");
+        if (userCategoryChoice.length > 1) {
+            categoryName = inputOption.replaceAll(userCategoryChoice[0] + " ", "");
+        }
 
-        if (userChoice[0].equalsIgnoreCase("auth")) {
-            getAuthorizationCode();
-            if (spotifyApiConnectionModel.isCode()) {
-                getAccessToken();
+        if (userCategoryChoice[0].equalsIgnoreCase("auth")) {
+            setAuthorizationCode();
+            if (spotifyAuth.isCode()) {
+                setAccessToken();
             }
 
-            if (spotifyApiConnectionModel.isCode() && spotifyApiConnectionModel.isAccessToken()) {
-                userView.printMessage("---SUCCESS---");
+            if (spotifyAuth.isAccessToken()) {
+                userView.printListOfMessage("Success!");
             } else {
-                userView.printMessage("---FAILED---");
+                userView.printListOfMessage("Failed!");
             }
-        } else if (spotifyApiConnectionModel.isCode()) {
-            TestMusicModel musicDataModel = new TestMusicModel();
-            switch (userChoice[0]) {
+        } else if (spotifyAuth.isAccessToken()) {
+
+            if (firstRun) {
+                apiResourceModel.getCategories("categories");
+                firstRun = false;
+            }
+
+            switch (userCategoryChoice[0].toLowerCase()) {
                 case "new":
-                    userView.printMessage("---NEW RELEASES---");
-                    userView.printMessage(musicDataModel.getNewMusic());
+                    userView.printListOfMessage(apiResourceModel.getNewSongs("new-releases"));
                     break;
 
                 case "featured":
-                    userView.printMessage("---FEATURED---");
-                    userView.printMessage(musicDataModel.getFeaturedMusic());
+                    userView.printListOfMessage(apiResourceModel.getFeaturedPlaylists("featured-playlists"));
                     break;
 
                 case "categories":
-                    userView.printMessage("---CATEGORIES---");
-                    userView.printMessage(musicDataModel.getCategoriesMusic());
+                    userView.printListOfMessage(apiResourceModel.getCategories("categories"));
                     break;
 
                 case "playlists":
-                    userView.printMessage("---" + userChoice[1] + " PLAYLISTS---");
-                    userView.printMessage(musicDataModel.getPlaylistsMusic(userChoice[1]));
+                    String categoryId = DataBase.geInstance().getCategoryID(categoryName);
+                    userView.printListOfMessage(apiResourceModel.getPlaylistCategoryID(categoryId));
                     break;
 
                 case "exit":
-                    userView.printMessage("---GOODBYE!---");
                     break;
 
                 default:
-                    userView.printMessage("Wrong user request! Try again.");
+                    userView.printListOfMessage("Wrong user request! Try again.");
             }
 
         } else {
-            userView.printMessage("Please, provide access for application.");
+            userView.printListOfMessage("Please, provide access for application.");
         }
     }
 
-    private void getAuthorizationCode() {
+    private void setAuthorizationCode() {
 
-        userView.printMessage("use this link to request the access code:");
+        userView.printListOfMessage("use this link to request the access code:");
+        userView.printListOfMessage(spotifyAuth.getLinkToRequestAccessCode());
 
-        userView.printMessage(spotifyApiConnectionModel.getLinkToRequestAccessCode());
-        userView.printMessage("waiting for code...");
+        spotifyAuth.getAccessCodeFromServer();
+        userView.printListOfMessage("waiting for code...");
 
-        spotifyApiConnectionModel.requestAccessCode();
-
-        if (spotifyApiConnectionModel.isCode()) {
-            userView.printMessage("code received");
+        if (spotifyAuth.isCode()) {
+            userView.printListOfMessage("code received");
         } else {
-            userView.printMessage("code not received");
+            userView.printListOfMessage("code not received");
         }
     }
 
-    private void getAccessToken() {
-
-        userView.printMessage("making http request for access_token...");
-        userView.printMessage("response:");
-
-        spotifyApiConnectionModel.requestAccessToken();
-        userView.printMessage(spotifyApiConnectionModel.getResponseAccessToken());
+    private void setAccessToken() {
+        userView.printListOfMessage("Making http request for access_token...");
+        spotifyAuth.getAccessTokenFromServer();
     }
-
 }
