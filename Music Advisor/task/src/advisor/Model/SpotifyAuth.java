@@ -3,7 +3,6 @@ package advisor.Model;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -11,54 +10,41 @@ import java.net.http.HttpResponse;
 import java.util.Base64;
 import java.util.HashMap;
 
-public class SpotifyApiConnectionModel {
-    private HttpServer httpServer;
-    private static SpotifyApiConnectionModel SERVER_MODEL;
-    private final Integer portUrl = 8081;
-    private final String localHostUrl = "http://localhost:" + portUrl;
-    private String serverResourceUrl = "https://accounts.spotify.com";
+public class SpotifyAuth {
+
+    private final static SpotifyAuth SPOTIFY_AUTH = new SpotifyAuth();
+    private final String localHostUrl = "http://localhost:" + ServerHttp.PORT_URL;
+    private String accessServerResourceUrl = "https://accounts.spotify.com";
     private boolean isAccessCode = false;
     private boolean isErrorConnection = false;
     private boolean isAccessToken = false;
-    private String responseAccessToken;
+    private final String clientId = "48af67d4f4b649019f5205330f92a462";
     private final HashMap<String, String> accessCodeRequestResp = new HashMap<>();
     private final HashMap<String, String> tokenRequestResp = new HashMap<>();
-    private final HashMap<String, String> dataPKCE = new HashMap<>();
 
-    private SpotifyApiConnectionModel() {
-        dataPKCE.put("clientID", "48af67d4f4b649019f5205330f92a462");
-        dataPKCE.put("method", "S256");
+    private SpotifyAuth() {
     }
 
-    public static SpotifyApiConnectionModel getInstance() {
-        if (SERVER_MODEL == null) {
-            SERVER_MODEL = new SpotifyApiConnectionModel();
-        }
-        return SERVER_MODEL;
+    public static SpotifyAuth getInstance() {
+        return SPOTIFY_AUTH;
     }
 
-    public void setServerResourceUrl(String url) {
-        serverResourceUrl = url;
+    public void setUrlAccessServer(String accessServerResourceUrl) {
+        this.accessServerResourceUrl = accessServerResourceUrl;
     }
 
     public String getLinkToRequestAccessCode() {
-        return serverResourceUrl + "/authorize?client_id=" + dataPKCE.get("clientID") + "&" +
+        return accessServerResourceUrl + "/authorize?client_id=" + clientId + "&" +
                 "redirect_uri=" + localHostUrl + "/callback&" +
                 "response_type=code";
     }
 
-    private HttpServer createServer() {
-        try {
-            httpServer = HttpServer.create();
-            httpServer.bind(new InetSocketAddress(portUrl), 0);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return httpServer;
-    }
-
-    public void requestAccessCode() {
-        httpServer = createServer();
+    /**
+     * Before starting this method, the user should click on the link granting authorization
+     * from getLinkToRequestAccessCode()
+     */
+    public void getAccessCodeFromServer() {
+        HttpServer httpServer = ServerHttp.createServer();
         httpServer.createContext("/callback",
                 exchange -> {
                     String response = exchange.getRequestURI().getQuery();
@@ -92,36 +78,26 @@ public class SpotifyApiConnectionModel {
             if (isErrorConnection || isAccessCode) {
                 break;
             }
-            sleepThread();
+            ServerHttp.sleepThread();
         }
 
         httpServer.stop(1);
     }
 
-    private void sleepThread() {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
+    public void getAccessTokenFromServer() {
+        HttpServer httpServer = ServerHttp.createServer();
 
-    public void requestAccessToken() {
-
-        createServer();
-        httpServer.createContext("/callback",
-                exchange -> {
-                }
-        );
+        httpServer.createContext("/callback");
         httpServer.start();
 
-        String secret = "f7ad0bed1627483dab14e3bc48e5f7fd";
+        String clientSec = "f7ad0bed1627483dab14e3bc48e5f7fd";
 
         HttpRequest request = HttpRequest.newBuilder()
                 .headers("Content-Type", "application/x-www-form-urlencoded",
-                        "Authorization", "Basic " + stringTo64Byte((dataPKCE.get("clientID") + ":" + secret))
+                        "Authorization", "Basic " +
+                                Base64.getEncoder().encodeToString((clientId + ":" + clientSec).getBytes())
                 )
-                .uri(URI.create(serverResourceUrl + "/api/token"))
+                .uri(URI.create(accessServerResourceUrl + "/api/token"))
                 .POST(HttpRequest.BodyPublishers.ofString(
                         "redirect_uri=http://localhost:8081/callback&" +
                                 "grant_type=authorization_code&" +
@@ -136,9 +112,9 @@ public class SpotifyApiConnectionModel {
 
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            responseAccessToken = response.body();
+            String responseWithAccessToken = response.body();
 
-            String[] codeArr = responseAccessToken
+            String[] codeArr = responseWithAccessToken
                     .replaceAll("\\{", "")
                     .replaceAll("}", "")
                     .replaceAll("\"", "")
@@ -147,7 +123,7 @@ public class SpotifyApiConnectionModel {
 
             for (String e : codeArr) {
                 String[] arr = e.split(":");
-                if (arr.length % 2 == 0){
+                if (arr.length % 2 == 0) {
                     tokenRequestResp.put(arr[0], arr[1]);
                 }
             }
@@ -164,7 +140,7 @@ public class SpotifyApiConnectionModel {
             if (isAccessToken || isErrorConnection) {
                 break;
             }
-            sleepThread();
+            ServerHttp.sleepThread();
         }
         httpServer.stop(1);
     }
@@ -177,11 +153,8 @@ public class SpotifyApiConnectionModel {
         return isAccessToken;
     }
 
-    public String getResponseAccessToken() {
-        return responseAccessToken;
+    public String getAccessToken() {
+        return tokenRequestResp.get("access_token");
     }
 
-    private String stringTo64Byte(String s) {
-        return Base64.getEncoder().encodeToString(s.getBytes());
-    }
 }
