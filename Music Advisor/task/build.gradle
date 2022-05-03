@@ -10,8 +10,8 @@ repositories {
 
 dependencies {
     implementation 'com.google.code.gson:gson:2.9.0'
+    implementation 'com.google.oauth-client:google-oauth-client:1.33.3'
 
-    implementation 'com.google.oauth-client:google-oauth-client:1.33.2'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
