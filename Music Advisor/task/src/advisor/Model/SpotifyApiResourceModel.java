@@ -37,7 +37,7 @@ public class SpotifyApiResourceModel {
         hostApiResource = urlHost;
     }
 
-    private HttpResponse<String> methodGET(String urlPatch) {
+    private HttpResponse<String> requestGETToServer(String urlPatch) {
         String serverResp = "";
 
         HttpServer httpServer = ServerHttp.createServer();
@@ -86,7 +86,7 @@ public class SpotifyApiResourceModel {
     }
 
     private JsonObject getJsonObjectFromHost(String urlPatch, String catalog) {
-        HttpResponse<String> httpResponse = methodGET(urlPatch);
+        HttpResponse<String> httpResponse = requestGETToServer(urlPatch);
         JsonObject jsonObject = JsonParser.parseString(httpResponse.body()).getAsJsonObject();
 
         errorSpotify = gson.fromJson(jsonObject.get("error"), ErrorSpotify.class);
