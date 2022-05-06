@@ -33,6 +33,9 @@ public class SpotifyAuth {
         this.accessServerResourceUrl = accessServerResourceUrl;
     }
 
+    /**
+     * @return a link that the user must click and then grant authorization
+     */
     public String getLinkToRequestAccessCode() {
         return accessServerResourceUrl + "/authorize?client_id=" + clientId + "&" +
                 "redirect_uri=" + localHostUrl + "/callback&" +
@@ -145,7 +148,7 @@ public class SpotifyAuth {
         httpServer.stop(1);
     }
 
-    public Boolean isCode() {
+    public boolean isCode() {
         return isAccessCode;
     }
 
