@@ -1,17 +1,13 @@
 package advisor;
 
 import advisor.Controller.ApplicationController;
-import advisor.Model.SpotifyAuth;
-import advisor.View.UserView;
 
 import java.util.HashMap;
-import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        ApplicationController controllerApplication = new ApplicationController(new UserView()
-                , SpotifyAuth.getInstance());
+
+        ApplicationController controllerApplication = new ApplicationController();
 
         if (args.length >= 2) {
             HashMap<String, String> initParamsAuthAndResourceServer = new HashMap<>();
@@ -21,12 +17,7 @@ public class Main {
             controllerApplication.setInitParams(initParamsAuthAndResourceServer);
         }
 
-        String inputOption = sc.nextLine();
-        while (!inputOption.equalsIgnoreCase("exit")) {
-            controllerApplication.mainMenu(inputOption);
-            inputOption = sc.nextLine();
-        }
+        controllerApplication.runApplication();
 
     }
-
 }
